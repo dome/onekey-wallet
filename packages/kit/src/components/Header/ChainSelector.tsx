@@ -46,16 +46,27 @@ const ChainSelector: FC = () => {
   const options = useMemo(() => {
     if (!enabledNetworks) return [];
 
-    return enabledNetworks.map((network) => ({
-      label: network.shortName,
-      value: network.id,
-      tokenProps: {
-        src: network.logoURI,
-        letter: network.shortName,
+    return [
+      {
+        label: intl.formatMessage({ id: 'content__all_chains' }),
+        value: 'all',
+        iconProps: {
+          name: 'OptionListAllSolid',
+          size: isVerticalLayout ? 32 : 24,
+          color: 'surface-neutral-default',
+        },
       },
-      badge: network.impl === 'evm' ? 'EVM' : undefined,
-    }));
-  }, [enabledNetworks]);
+      ...enabledNetworks.map((network) => ({
+        label: network.shortName,
+        value: network.id,
+        tokenProps: {
+          src: network.logoURI,
+          letter: network.shortName,
+        },
+        badge: network.impl === 'evm' ? 'EVM' : undefined,
+      })),
+    ];
+  }, [enabledNetworks, intl, isVerticalLayout]);
 
   return (
     <Box>

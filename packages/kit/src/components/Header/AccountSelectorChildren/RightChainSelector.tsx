@@ -67,24 +67,26 @@ const RightChainSelector: FC<Props> = ({
 
     if (!availableNetworks) return [];
 
-    const networks: SelectItem<string>[] = availableNetworks.map((network) => ({
-      label: network.shortName,
-      value: network.id,
-      tokenProps: {
-        src: network.logoURI,
-        letter: network.shortName,
+    const networks: SelectItem<string>[] = [
+      {
+        label: intl.formatMessage({ id: 'content__all_chains' }),
+        value: AllNetwork,
+        iconProps: {
+          name: 'OptionListAllSolid',
+          size: isVerticalLayout ? 32 : 24,
+          color: 'surface-neutral-default',
+        },
       },
-      badge: network.impl === 'evm' ? 'EVM' : undefined,
-    }));
-    networks.unshift({
-      label: intl.formatMessage({ id: 'option__all' }),
-      value: AllNetwork,
-      iconProps: {
-        name: 'OptionListAllSolid',
-        size: isVerticalLayout ? 32 : 24,
-        color: 'surface-neutral-default',
-      },
-    });
+      ...availableNetworks.map((network) => ({
+        label: network.shortName,
+        value: network.id,
+        tokenProps: {
+          src: network.logoURI,
+          letter: network.shortName,
+        },
+        badge: network.impl === 'evm' ? 'EVM' : undefined,
+      })),
+    ];
 
     return networks;
     // eslint-disable-next-line react-hooks/exhaustive-deps
