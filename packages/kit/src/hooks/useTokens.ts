@@ -13,7 +13,7 @@ export function useAccountTokens(networkId: string, accountId: string) {
 export function useAccountTokenLoading(networkId: string, accountId: string) {
   const accountTokens = useAppSelector((s) => s.tokens.accountTokens);
   return useMemo(
-    () => typeof accountTokens[networkId]?.[accountId] === 'undefined',
+    () => !accountTokens[networkId]?.[accountId]?.length,
     [networkId, accountId, accountTokens],
   );
 }

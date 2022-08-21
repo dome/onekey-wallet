@@ -13,6 +13,7 @@ import {
 import {
   GeneralInitialState,
   changeActiveNetwork,
+  changeDisplayNetwork,
 } from '../../store/reducers/general';
 import { updateNetworks } from '../../store/reducers/runtime';
 import { backgroundClass, backgroundMethod } from '../decorators';
@@ -22,6 +23,22 @@ import ServiceBase from './ServiceBase';
 
 @backgroundClass()
 class ServiceNetwork extends ServiceBase {
+  @backgroundMethod()
+  async changeDisplayNetwork(
+    networkId: NonNullable<GeneralInitialState['displayNetworkId']>,
+  ) {
+    let newNetwork;
+    if (networkId === 'allevm') {
+      // TODO
+    } else if (networkId === 'all') {
+      // TODO
+    } else {
+      newNetwork = await this.changeActiveNetwork(networkId);
+    }
+    this.backgroundApi.dispatch(changeDisplayNetwork(networkId));
+    return newNetwork;
+  }
+
   @backgroundMethod()
   async changeActiveNetwork(
     networkId: NonNullable<GeneralInitialState['activeNetworkId']>,

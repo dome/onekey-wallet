@@ -4,6 +4,7 @@ export type GeneralInitialState = {
   activeAccountId: string | null;
   activeWalletId: string | null;
   activeNetworkId: string | null;
+  displayNetworkId?: string | null | 'allevm' | 'all';
 };
 
 const initialState: GeneralInitialState = {
@@ -49,10 +50,22 @@ export const generalSlice = createSlice({
     ) {
       state.activeNetworkId = action.payload;
     },
+    changeDisplayNetwork(
+      state,
+      action: PayloadAction<
+        NonNullable<GeneralInitialState['displayNetworkId']>
+      >,
+    ) {
+      state.displayNetworkId = action.payload;
+    },
   },
 });
 
-export const { changeActiveAccount, changeActiveNetwork, setActiveIds } =
-  generalSlice.actions;
+export const {
+  changeActiveAccount,
+  changeActiveNetwork,
+  setActiveIds,
+  changeDisplayNetwork,
+} = generalSlice.actions;
 
 export default generalSlice.reducer;

@@ -7,7 +7,7 @@ import { Token } from '@onekeyhq/engine/src/types/token';
 
 import backgroundApiProxy from '../background/instance/backgroundApiProxy';
 
-import { useActiveWalletAccount } from './redux';
+import { useActiveWalletAccount, useAppSelector } from './redux';
 import {
   useAccountTokenLoading,
   useAccountTokens,
@@ -26,14 +26,31 @@ export const useManageTokens = ({
   fetchTokensOnMount?: boolean;
 } = {}) => {
   const isFocused = useIsFocused();
-  const { accountId, networkId } = useActiveWalletAccount();
-  const allTokens: Token[] = useNetworkTokens(networkId);
-  const accountTokens: Token[] = useAccountTokens(networkId, accountId);
-  const accountTokensLoading = useAccountTokenLoading(networkId, accountId);
-  const balances = useAccountTokensBalance(networkId, accountId);
-  const prices = useNetworkTokensPrice(networkId);
-  const charts = useNetworkTokensChart(networkId);
+  const {
+    accountId,
+    networkId,
+    displayNetworkId = networkId,
+  } = useActiveWalletAccount();
+
+  const { tokens, tokensPrice, accountTokens, accountTokensBalance } =
+    useAppSelector((s) => s.tokens);
+  let loading = true;
+
+  // const accountTokensLoading = useAccountTokenLoading(
+  //   displayNetworkId,
+  //   accountId,
+  // );
+  // const balances = useAccountTokensBalance(displayNetworkId, accountId);
+  // const prices = useNetworkTokensPrice(displayNetworkId);
+  // const charts = useNetworkTokensChart(displayNetworkId);
   const nativeToken = useNativeToken(networkId, accountId);
+  if (displayNetworkId === 'all') {
+    // TODO
+  } else if (displayNetworkId === 'allevm') {
+    // TODO
+  } else {
+    loading = !accountTokens[networkId]?.[accountId]?.length;
+  }
 
   const accountTokensMap = useMemo(() => {
     const map = new Map<string, Token>();
@@ -131,7 +148,7 @@ export const useManageTokens = ({
   );
 
   return {
-    loading: accountTokensLoading,
+    loading,
     nativeToken,
     accountTokens,
     accountTokensMap,

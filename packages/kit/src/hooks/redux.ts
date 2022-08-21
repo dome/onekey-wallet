@@ -70,13 +70,17 @@ export type IActiveWalletAccount = {
   networkImpl: string;
   accountAddress: string;
   isCompatibleNetwork: boolean;
+  displayNetworkId?: string;
 };
 
 export const { use: useActiveWalletAccount, get: getActiveWalletAccount } =
   makeSelector<IActiveWalletAccount>((selector) => {
-    const { activeAccountId, activeWalletId, activeNetworkId } = selector(
-      (s) => s.general,
-    );
+    const {
+      activeAccountId,
+      activeWalletId,
+      activeNetworkId,
+      displayNetworkId,
+    } = selector((s) => s.general);
 
     // TODO init runtime data from background
     const { wallets, networks, accounts } = selector((s) => s.runtime);
@@ -121,6 +125,7 @@ export const { use: useActiveWalletAccount, get: getActiveWalletAccount } =
       accountAddress,
       walletId,
       isCompatibleNetwork,
+      displayNetworkId,
     };
   });
 

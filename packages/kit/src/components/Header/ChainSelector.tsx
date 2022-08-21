@@ -4,7 +4,6 @@ import { useNavigation } from '@react-navigation/core';
 import { useIntl } from 'react-intl';
 
 import {
-  Box,
   HStack,
   Icon,
   Select,
@@ -49,12 +48,13 @@ const ChainSelector: FC = () => {
     return [
       {
         label: intl.formatMessage({ id: 'content__all_chains' }),
-        value: 'all',
+        value: 'allevm',
         iconProps: {
           name: 'OptionListAllSolid',
           size: isVerticalLayout ? 32 : 24,
           color: 'surface-neutral-default',
         },
+        badge: 'EVM',
       },
       ...enabledNetworks.map((network) => ({
         label: network.shortName,
@@ -69,64 +69,63 @@ const ChainSelector: FC = () => {
   }, [enabledNetworks, intl, isVerticalLayout]);
 
   return (
-    <Box>
-      <Select
-        setPositionOnlyMounted
-        positionTranslateY={-4}
-        dropdownPosition="top-left"
-        dropdownProps={{
-          minW: '240px',
-          height: isVerticalLayout ? '70%' : '320px',
-        }}
-        value={activeNetwork ? activeNetwork?.id : undefined}
-        onChange={handleActiveChainChange}
-        title={intl.formatMessage({ id: 'network__networks' })}
-        options={options}
-        isTriggerPlain
-        footerText={intl.formatMessage({ id: 'action__customize_network' })}
-        footerIcon="PencilSolid"
-        onPressFooter={() => {
-          setTimeout(() => {
-            navigation.navigate(RootRoutes.Modal, {
-              screen: ModalRoutes.ManageNetwork,
-              params: { screen: ManageNetworkRoutes.Listing },
-            });
-          }, 500);
-        }}
-        renderTrigger={(activeOption, isHovered, visible, isPressed) => (
-          <HStack
-            p={2}
-            space={1}
-            bg={
-              // eslint-disable-next-line no-nested-ternary
-              visible
-                ? 'surface-selected'
-                : // eslint-disable-next-line no-nested-ternary
-                isPressed
-                ? 'surface-pressed'
-                : isHovered
-                ? 'surface-hovered'
-                : undefined
-            }
-            borderRadius="xl"
-            alignItems="center"
-            justifyContent={isVerticalLayout ? 'flex-end' : 'space-between'}
-          >
-            <HStack space={3} alignItems="center">
-              <Token size={6} {...activeOption.tokenProps} />
-              <Typography.Body2Strong
-                isTruncated
-                numberOfLines={1}
-                maxW={screenWidth / 2 - 72}
-              >
-                {activeOption.label}
-              </Typography.Body2Strong>
-            </HStack>
-            <Icon size={20} name="ChevronDownSolid" />
+    <Select
+      setPositionOnlyMounted
+      positionTranslateY={-4}
+      dropdownPosition="top-left"
+      dropdownProps={{
+        minW: '240px',
+        height: isVerticalLayout ? '70%' : '320px',
+      }}
+      value={activeNetwork ? activeNetwork?.id : undefined}
+      onChange={handleActiveChainChange}
+      title={intl.formatMessage({ id: 'network__networks' })}
+      // @ts-ignore
+      options={options}
+      isTriggerPlain
+      footerText={intl.formatMessage({ id: 'action__customize_network' })}
+      footerIcon="PencilSolid"
+      onPressFooter={() => {
+        setTimeout(() => {
+          navigation.navigate(RootRoutes.Modal, {
+            screen: ModalRoutes.ManageNetwork,
+            params: { screen: ManageNetworkRoutes.Listing },
+          });
+        }, 300);
+      }}
+      renderTrigger={(activeOption, isHovered, visible, isPressed) => (
+        <HStack
+          p={2}
+          space={1}
+          bg={
+            // eslint-disable-next-line no-nested-ternary
+            visible
+              ? 'surface-selected'
+              : // eslint-disable-next-line no-nested-ternary
+              isPressed
+              ? 'surface-pressed'
+              : isHovered
+              ? 'surface-hovered'
+              : undefined
+          }
+          borderRadius="xl"
+          alignItems="center"
+          justifyContent={isVerticalLayout ? 'flex-end' : 'space-between'}
+        >
+          <HStack space={3} alignItems="center">
+            <Token size={6} {...activeOption.tokenProps} />
+            <Typography.Body2Strong
+              isTruncated
+              numberOfLines={1}
+              maxW={screenWidth / 2 - 72}
+            >
+              {activeOption.label}
+            </Typography.Body2Strong>
           </HStack>
-        )}
-      />
-    </Box>
+          <Icon size={20} name="ChevronDownSolid" />
+        </HStack>
+      )}
+    />
   );
 };
 
