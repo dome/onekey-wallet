@@ -28,43 +28,42 @@ export default class ServiceToken extends ServiceBase {
 
   refreshTokenBalance() {
     const { appSelector } = this.backgroundApi;
-    const activeAccountId = appSelector((s) => s.general.activeAccountId);
-    const activeNetworkId = appSelector((s) => s.general.activeNetworkId);
+    const { activeAccountId, activeNetworkId } = appSelector((s) => s.general);
     if (activeAccountId && activeNetworkId) {
-      this.fetchTokenBalance({ activeAccountId, activeNetworkId });
+      this.fetchTokenBalance({
+        accountId: activeAccountId,
+        networkId: activeNetworkId,
+      });
     }
   }
 
   @backgroundMethod()
   async fetchTokens({
-    activeAccountId,
-    activeNetworkId,
+    accountId,
+    networkId,
     withBalance,
     withPrice,
   }: {
-    activeAccountId: string;
-    activeNetworkId: string;
+    accountId: string;
+    networkId: string;
     withBalance?: boolean;
     withPrice?: boolean;
   }) {
     const { engine, dispatch } = this.backgroundApi;
-    const networkTokens = await engine.getTopTokensOnNetwork(
-      activeNetworkId,
-      50,
-    );
-    dispatch(setTokens({ activeNetworkId, tokens: networkTokens }));
+    const networkTokens = await engine.getTopTokensOnNetwork(accountId, 50);
+    dispatch(setTokens({ networkId, tokens: networkTokens }));
     const tokenIds = networkTokens.map((token) => token.tokenIdOnNetwork);
     if (withBalance) {
       this.fetchTokenBalance({
-        activeAccountId,
-        activeNetworkId,
+        accountId,
+        networkId,
         tokenIds,
       });
     }
     if (withPrice) {
       this.fetchPrices({
-        activeNetworkId,
-        activeAccountId,
+        networkId,
+        accountId,
         tokenIds,
       });
     }
@@ -73,27 +72,27 @@ export default class ServiceToken extends ServiceBase {
 
   @backgroundMethod()
   async fetchAccountTokens({
-    activeAccountId,
-    activeNetworkId,
+    accountId,
+    networkId,
     withBalance,
     withPrice,
     wait,
   }: {
-    activeAccountId: string;
-    activeNetworkId: string;
+    accountId: string;
+    networkId: string;
     withBalance?: boolean;
     withPrice?: boolean;
     wait?: boolean;
   }) {
     const { engine, dispatch } = this.backgroundApi;
-    const tokens = await engine.getTokens(activeNetworkId, activeAccountId);
-    dispatch(setAccountTokens({ activeAccountId, activeNetworkId, tokens }));
+    const tokens = await engine.getTokens(networkId, accountId);
+    dispatch(setAccountTokens({ accountId, networkId, tokens }));
     const waitPromises: Promise<any>[] = [];
     if (withBalance) {
       waitPromises.push(
         this.fetchTokenBalance({
-          activeAccountId,
-          activeNetworkId,
+          accountId,
+          networkId,
           tokenIds: tokens.map((token) => token.tokenIdOnNetwork),
         }),
       );
@@ -101,8 +100,8 @@ export default class ServiceToken extends ServiceBase {
     if (withPrice) {
       waitPromises.push(
         this.fetchPrices({
-          activeNetworkId,
-          activeAccountId,
+          networkId,
+          accountId,
           tokenIds: tokens.map((token) => token.tokenIdOnNetwork),
         }),
       );
@@ -118,8 +117,8 @@ export default class ServiceToken extends ServiceBase {
     const { accountId, networkId } = await this.getActiveWalletAccount();
     this.backgroundApi.dispatch(
       setAccountTokensBalances({
-        activeAccountId: accountId,
-        activeNetworkId: networkId,
+        accountId,
+        networkId,
         tokensBalance: {},
       }),
     );
@@ -127,12 +126,12 @@ export default class ServiceToken extends ServiceBase {
 
   @backgroundMethod()
   async fetchTokenBalance({
-    activeNetworkId,
-    activeAccountId,
+    networkId,
+    accountId,
     tokenIds,
   }: {
-    activeNetworkId: string;
-    activeAccountId: string;
+    networkId: string;
+    accountId: string;
     tokenIds?: string[];
   }) {
     const { engine, appSelector, dispatch } = this.backgroundApi;
@@ -141,29 +140,29 @@ export default class ServiceToken extends ServiceBase {
     if (tokenIds) {
       tokenIdsOnNetwork = tokenIds;
     } else {
-      const ids1 = tokens[activeNetworkId] || [];
-      const ids2 = accountTokens[activeNetworkId]?.[activeAccountId] || [];
+      const ids1 = tokens[networkId] || [];
+      const ids2 = accountTokens[networkId]?.[accountId] || [];
       tokenIdsOnNetwork = ids1.concat(ids2).map((i) => i.tokenIdOnNetwork);
     }
     const [tokensBalance, newTokens] = await engine.getAccountBalance(
-      activeAccountId,
-      activeNetworkId,
+      accountId,
+      networkId,
       Array.from(new Set(tokenIdsOnNetwork)),
       true,
     );
     if (newTokens?.length) {
       dispatch(
         addAccountTokens({
-          activeAccountId,
-          activeNetworkId,
+          accountId,
+          networkId,
           tokens: newTokens,
         }),
       );
     }
     dispatch(
       setAccountTokensBalances({
-        activeAccountId,
-        activeNetworkId,
+        accountId,
+        networkId,
         tokensBalance,
       }),
     );
@@ -172,12 +171,12 @@ export default class ServiceToken extends ServiceBase {
 
   @backgroundMethod()
   async fetchPrices({
-    activeNetworkId,
-    activeAccountId,
+    networkId,
+    accountId,
     tokenIds,
   }: {
-    activeNetworkId: string;
-    activeAccountId: string;
+    networkId: string;
+    accountId: string;
     tokenIds?: string[];
   }) {
     const { engine, appSelector, dispatch } = this.backgroundApi;
@@ -186,13 +185,13 @@ export default class ServiceToken extends ServiceBase {
     if (tokenIds) {
       tokenIdsOnNetwork = tokenIds;
     } else {
-      const ids1 = tokens[activeNetworkId] || [];
-      const ids2 = accountTokens[activeNetworkId]?.[activeAccountId] || [];
+      const ids1 = tokens[networkId] || [];
+      const ids2 = accountTokens[networkId]?.[accountId] || [];
       tokenIdsOnNetwork = ids1.concat(ids2).map((i) => i.tokenIdOnNetwork);
       tokenIdsOnNetwork = Array.from(new Set(tokenIdsOnNetwork));
     }
     const [prices, charts] = await engine.getPricesAndCharts(
-      activeNetworkId,
+      networkId,
       tokenIdsOnNetwork,
     );
     const fullPrices: Record<string, string | null> = {
@@ -209,11 +208,11 @@ export default class ServiceToken extends ServiceBase {
 
     dispatch(
       setPrices({
-        activeNetworkId,
+        networkId,
         prices: fullPrices,
       }),
     );
-    dispatch(setCharts({ activeNetworkId, charts }));
+    dispatch(setCharts({ networkId, charts }));
     return fullPrices;
   }
 
@@ -243,8 +242,8 @@ export default class ServiceToken extends ServiceBase {
       logoURI,
     );
     await this.fetchAccountTokens({
-      activeAccountId: accountId,
-      activeNetworkId: networkId,
+      accountId,
+      networkId,
     });
     return result;
   }

@@ -11,6 +11,7 @@ const initialState: GeneralInitialState = {
   activeAccountId: null,
   activeNetworkId: null,
   activeWalletId: null,
+  displayNetworkId: null,
 } as const;
 
 export const generalSlice = createSlice({
