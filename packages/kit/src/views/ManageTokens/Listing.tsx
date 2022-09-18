@@ -273,7 +273,7 @@ const ListRenderToken: FC<ListRenderTokenProps> = ({
     (t) => item.tokenIdOnNetwork === t.tokenIdOnNetwork && !t.autoDetected,
   );
 
-  const onPress = useCallback(async () => {
+  const onAddToken = useCallback(async () => {
     if (accountId && networkId) {
       try {
         await timeout(
@@ -341,6 +341,26 @@ const ListRenderToken: FC<ListRenderTokenProps> = ({
       }
     }
   }, [accountId, networkId, toast, intl, hideSmallBalance, item]);
+
+  const onPress = useCallback(async () => {
+    if (accountId && networkId) {
+      const vaultSettings = await backgroundApiProxy.engine.getVaultSettings(
+        networkId,
+      );
+      if (vaultSettings?.activateToken) {
+        navigation.navigate(ManageTokenRoutes.ActivateToken, {
+          accountId,
+          networkId,
+          tokenId: item.tokenIdOnNetwork,
+          onSuccess() {
+            onAddToken();
+          },
+        });
+      } else {
+        onAddToken();
+      }
+    }
+  }, [accountId, item.tokenIdOnNetwork, navigation, networkId, onAddToken]);
 
   const onDetail = useCallback(() => {
     const routeName = isOwned
