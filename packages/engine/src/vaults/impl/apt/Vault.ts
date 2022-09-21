@@ -24,7 +24,7 @@ import {
   NotImplemented,
   OneKeyInternalError,
 } from '../../../errors';
-import { DBSimpleAccount } from '../../../types/account';
+import { DBSimpleAccount, DBVariantAccount } from '../../../types/account';
 import { KeyringSoftwareBase } from '../../keyring/KeyringSoftwareBase';
 import {
   IApproveInfo,
@@ -47,7 +47,11 @@ import {
   IUnsignedTxPro,
 } from '../../types';
 import { convertFeeValueToGwei } from '../../utils/feeInfoUtils';
-import { isHexString, stripHexPrefix } from '../../utils/hexUtils';
+import {
+  addHexPrefix,
+  isHexString,
+  stripHexPrefix,
+} from '../../utils/hexUtils';
 import { VaultBase } from '../../VaultBase';
 
 import { KeyringHardware } from './KeyringHardware';
@@ -109,6 +113,19 @@ export default class Vault extends VaultBase {
     const { block_height: blockNumber } = await client.getLedgerInfo();
     const latestBlock = parseInt(blockNumber);
     return { responseTime: Math.floor(performance.now() - start), latestBlock };
+  }
+
+  async _getPublicKey({
+    prefix = true,
+  }: {
+    prefix?: boolean;
+  } = {}): Promise<string> {
+    const dbAccount = (await this.getDbAccount()) as DBSimpleAccount;
+    let publicKey = dbAccount.pub;
+    if (prefix) {
+      publicKey = addHexPrefix(publicKey);
+    }
+    return Promise.resolve(publicKey);
   }
 
   override async validateAddress(address: string) {
@@ -269,6 +286,9 @@ export default class Vault extends VaultBase {
       this.networkId,
     );
     const { type, function: fun } = encodedTx;
+    if (!encodedTx?.sender) {
+      encodedTx.sender = dbAccount.address;
+    }
     let action: IDecodedTxAction | null = null;
     if (type === 'entry_function_payload' && fun === '0x1::coin::transfer') {
       // Native token transfer
@@ -709,5 +729,10 @@ export default class Vault extends VaultBase {
         }
       }),
     );
+  }
+
+  async getTransactionByHash(txId: string) {
+    const client = await this.getClient();
+    return client.getTransactionByHash(txId);
   }
 }

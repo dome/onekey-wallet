@@ -21,7 +21,8 @@ import { OneKeyError, OneKeyHardwareError } from '../../../errors';
 import { IDecodedTxActionType } from '../../types';
 import { hexlify, stripHexPrefix } from '../../utils/hexUtils';
 
-import { TxPayload } from './types';
+import { TypeTagParser } from './builder_utils';
+import { ArgumentABI, TxPayload } from './types';
 
 import type { Signer } from '../../../proxy';
 
@@ -94,6 +95,7 @@ export async function generateSignTransaction(
   sender: string,
   senderPublicKey: string,
   payload: TxPayload,
+  bscTxn?: string,
   options?: {
     sequence_number?: string;
     max_gas_amount?: string;
@@ -102,28 +104,34 @@ export async function generateSignTransaction(
     chain_id?: number;
   },
 ) {
-  const config: RemoteABIBuilderConfig = { sender };
-  if (options?.sequence_number) {
-    config.sequenceNumber = options?.sequence_number;
-  }
-  if (options?.gas_unit_price) {
-    config.gasUnitPrice = options?.gas_unit_price;
-  }
-  if (options?.max_gas_amount) {
-    config.maxGasAmount = options?.max_gas_amount;
-  }
-  if (options?.expiration_timestamp_secs) {
-    const timestamp = Number.parseInt(options?.expiration_timestamp_secs, 10);
-    config.expSecFromNow = timestamp - Math.floor(Date.now() / 1000);
-  }
+  let rawTxn;
+  if (bscTxn) {
+    const deserializer = new BCS.Deserializer(hexToBytes(bscTxn));
+    rawTxn = TxnBuilderTypes.RawTransaction.deserialize(deserializer);
+  } else {
+    const config: RemoteABIBuilderConfig = { sender };
+    if (options?.sequence_number) {
+      config.sequenceNumber = options?.sequence_number;
+    }
+    if (options?.gas_unit_price) {
+      config.gasUnitPrice = options?.gas_unit_price;
+    }
+    if (options?.max_gas_amount) {
+      config.maxGasAmount = options?.max_gas_amount;
+    }
+    if (options?.expiration_timestamp_secs) {
+      const timestamp = Number.parseInt(options?.expiration_timestamp_secs, 10);
+      config.expSecFromNow = timestamp - Math.floor(Date.now() / 1000);
+    }
 
-  const builder = new TransactionBuilderRemoteABI(client, config);
+    const builder = new TransactionBuilderRemoteABI(client, config);
 
-  const rawTxn = await builder.build(
-    payload.function ?? '',
-    payload.type_arguments ?? [],
-    payload.arguments ?? [],
-  );
+    rawTxn = await builder.build(
+      payload.function ?? '',
+      payload.type_arguments ?? [],
+      payload.arguments ?? [],
+    );
+  }
 
   const signingMessage = TransactionBuilder.getSigningMessage(rawTxn);
   const [signature] = await signer.sign(
@@ -168,6 +176,8 @@ export async function signTransaction(
     gas_unit_price,
     expiration_timestamp_secs,
 
+    bscTxn,
+
     //  payload
     type,
     function: func,
@@ -194,6 +204,7 @@ export async function signTransaction(
       type_arguments,
       code,
     },
+    bscTxn,
     {
       sequence_number,
       max_gas_amount,
@@ -255,6 +266,175 @@ export async function getAccountCoinResource(
   const resources = await client.getAccountResources(stripHexPrefix(address));
   const accountResource = resources.find((r) => r.type === typeTag);
   return Promise.resolve(accountResource);
+}
+
+export async function getModuleAbiMap(aptosClient: AptosClient, addr: string) {
+  const modules = await aptosClient.getAccountModules(addr);
+  const abis = modules
+    .map((module) => module.abi)
+    .flatMap((abi) =>
+      abi?.exposed_functions
+        .filter((ef) => ef.is_entry)
+        .map((ef) => ({
+          fullName: `${abi.address}::${abi.name}::${ef.name}`,
+          ...ef,
+        })),
+    );
+
+  const abiMap = new Map<string, Types.MoveFunction & { fullName: string }>();
+  abis.forEach((abi) => {
+    if (abi) {
+      abiMap.set(abi.fullName, abi);
+    }
+  });
+
+  return abiMap;
+}
+
+/**
+ * 0x1::aptos_coin::AptosCoin
+ * // Vectors are in format `vector<other_tag_string>`
+ * vector<0x1::aptos_coin::AptosCoin>
+ * bool
+ * u8
+ * u64
+ * u128
+ * address
+ */
+export function decodeTypeArgument(t: TxnBuilderTypes.TypeTag): string {
+  if (t instanceof TxnBuilderTypes.TypeTagStruct) {
+    const { address, module_name, name } = t.value;
+    return `${hexlify(address?.address, {
+      removeZeros: true,
+    })}::${module_name?.value}::${name?.value}`;
+  }
+  if (t instanceof TxnBuilderTypes.TypeTagVector) {
+    return `vector<${decodeTypeArgument(t.value)}>`;
+  }
+  if (t instanceof TxnBuilderTypes.TypeTagU8) {
+    return 'u8';
+  }
+  if (t instanceof TxnBuilderTypes.TypeTagU64) {
+    return 'u64';
+  }
+  if (t instanceof TxnBuilderTypes.TypeTagU128) {
+    return 'u128';
+  }
+  if (t instanceof TxnBuilderTypes.TypeTagBool) {
+    return 'bool';
+  }
+  if (t instanceof TxnBuilderTypes.TypeTagAddress) {
+    return 'address';
+  }
+  throw new Error('Invalid type tag.');
+}
+
+export function deserializeVector(
+  deserializer: BCS.Deserializer,
+  cls: any,
+): any[] {
+  const length = deserializer.deserializeUleb128AsU32();
+  const list: Array<typeof cls> = [];
+  for (let i = 0; i < length; i += 1) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
+      list.push(cls.deserialize(deserializer));
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  return list;
+}
+
+export function decodeArgument(
+  typeTag: TxnBuilderTypes.TypeTag,
+  argument: Uint8Array,
+): any {
+  const deserializer = new BCS.Deserializer(argument);
+
+  deserializer.deserializeUleb128AsU32();
+
+  if (typeTag instanceof TxnBuilderTypes.TypeTagBool) {
+    return deserializer.deserializeBool();
+  }
+  if (typeTag instanceof TxnBuilderTypes.TypeTagU8) {
+    return deserializer.deserializeU8();
+  }
+  if (typeTag instanceof TxnBuilderTypes.TypeTagU64) {
+    return deserializer.deserializeU64();
+  }
+  if (typeTag instanceof TxnBuilderTypes.TypeTagU128) {
+    return deserializer.deserializeU128();
+  }
+  if (typeTag instanceof TxnBuilderTypes.TypeTagAddress) {
+    const hex = deserializer.deserializeFixedBytes(
+      TxnBuilderTypes.AccountAddress.LENGTH,
+    );
+    return hexlify(hex, { removeZeros: true });
+  }
+  if (typeTag instanceof TxnBuilderTypes.TypeTagVector) {
+    const { value: typeTagValue } = typeTag;
+    return decodeArgument(typeTagValue, argument);
+  }
+  if (typeTag instanceof TxnBuilderTypes.TypeTagStruct) {
+    return deserializer.deserializeStr();
+  }
+  throw new Error('Invalid type tag.');
+}
+
+export function decodeArguments(
+  originalArgs: string[] | undefined,
+  args: Uint8Array[],
+): any[] {
+  if (!originalArgs) return [];
+  const typeArgABIs = originalArgs.map(
+    (arg, i) =>
+      new ArgumentABI(`var${i}`, new TypeTagParser(arg).parseTypeTag()),
+  );
+
+  return args.map((argument, index) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      return decodeArgument(typeArgABIs[index]?.type_tag, argument);
+    } catch (error) {
+      console.log(error);
+    }
+    return '';
+  });
+}
+
+export async function transactionPayloadToTxPayload(
+  aptosClient: AptosClient,
+  payload: TxnBuilderTypes.TransactionPayload,
+): Promise<TxPayload> {
+  if (payload instanceof TxnBuilderTypes.EntryFunction) {
+    const { module_name, function_name, ty_args, args } = payload;
+
+    const func = `${hexlify(module_name?.address?.address, {
+      removeZeros: true,
+    })}::${module_name?.name?.value}::${function_name?.value}`;
+
+    const type_arguments = ty_args?.map((t) => decodeTypeArgument(t));
+
+    const [addr] = func.split('::');
+
+    const abiMap = await getModuleAbiMap(aptosClient, addr);
+    const funcAbi = abiMap.get(func);
+    const originalArgs = funcAbi?.params?.filter(
+      (param) => param !== 'signer' && param !== '&signer',
+    );
+
+    const values = decodeArguments(originalArgs, args);
+
+    return {
+      type: 'entry_function_payload',
+      function: func,
+      arguments: values,
+      type_arguments,
+    };
+  }
+  // TODO: TxnBuilderTypes.TransactionPayloadScript、TransactionPayloadModuleBundle
+  throw new OneKeyHardwareError(Error('not support'));
 }
 
 export function generateRegisterToken(tokenAddress: string): TxPayload {
