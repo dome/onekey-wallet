@@ -40,6 +40,7 @@ const networkId2SwftcNetworkName: Record<string, string> = {
   [OnekeyNetwork.fantom]: 'FTM',
   [OnekeyNetwork.arbitrum]: 'ARB',
   [OnekeyNetwork.celo]: 'CELO',
+  [OnekeyNetwork.jfin]: 'JFIN',
   [OnekeyNetwork.optimism]: 'Optimism',
   [OnekeyNetwork.sol]: 'SOL',
   [OnekeyNetwork.trx]: 'TRX',

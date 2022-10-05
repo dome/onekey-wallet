@@ -88,6 +88,7 @@ export const DEFAULT_RPC_ENDPOINT_TO_CLEAR: Record<string, string> = {
     'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
   [OnekeyNetwork.bsc]: 'https://bsc-dataseed1.binance.org',
   [OnekeyNetwork.polygon]: 'https://polygon-rpc.com',
+  [OnekeyNetwork.jfin]: 'https://rpc.jfinchain.com',
 };
 
 function checkPassword(context: OneKeyContext, password: string): boolean {
