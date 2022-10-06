@@ -424,6 +424,10 @@ export const networkSupportedTokens: Record<string, string[]> = {
   [OnekeyNetwork.etc]: ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'],
   [OnekeyNetwork.etf]: ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'],
   [OnekeyNetwork.ethw]: ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'],
+  [OnekeyNetwork.kub]: ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+                        '0x9C04EFD1E9aD51A605eeDcb576159242FF930368'
+                      ],
+  [OnekeyNetwork.jfin]: ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'],
 };
 
 export const tokenReservedValues: Record<string, number> = {

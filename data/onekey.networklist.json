@@ -2262,13 +2262,58 @@
           "shortcode": "kub",
           "shortname": "KUB",
           "symbol": "KUB"
-      }
+      },
+      {
+        "balance2FeeDecimals": 9,
+        "chainId": "3501",
+        "code": "jfin",
+        "decimals": 18,
+        "enable": true,
+        "explorers": [
+            {
+                "address": "https://exp.jfinchain.com/address/{address}",
+                "block": "https://exp.jfinchain.com/block/{block}",
+                "name": "https://exp.jfinchain.com/",
+                "transaction": "https://exp.jfinchain.com/tx/{transaction}"
+            }
+        ],
+        "extensions": {
+            "defaultStableTokens": [
+            ],
+            "position": 3
+        },
+        "fee": {
+            "code": "jfin",
+            "decimals": 9,
+            "symbol": "Gwei"
+        },
+        "id": "evm--3501",
+        "impl": "evm",
+        "isTestnet": false,
+        "logoURI": "https://static.wixstatic.com/media/ff114f_a8511d92b57c4e6ea27422ede46f5f57~mv2.png/v1/fill/w_69,h_69,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/JFIN%20Logo-06.png",
+        "name": "JFIN Chain",
+        "prices": [
+            {
+                "channel": "coingecko",
+                "native": "jfin-coin",
+                "platform": "jfin-chain"
+            }
+        ],
+        "rpcURLs": [
+            {
+                "url": "https://rpc.jfinchain.com"
+            }
+        ],
+        "shortcode": "jfin",
+        "shortname": "JFIN",
+        "symbol": "JFIN"
+    }
   ],
   "tags": {},
-  "timestamp": "2022-10-06T10:24:09.805Z",
+  "timestamp": "2022-10-06T12:24:09.805Z",
   "version": {
       "major": 1,
       "minor": 6,
-      "patch": 7
+      "patch": 8
   }
 }

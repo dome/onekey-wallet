@@ -1486,6 +1486,7 @@ class Engine {
       chainId,
       includeNativeToken: 1,
     });
+
     if (tokens.length) {
       await simpleDb.token.updateTokens(impl, chainId, tokens);
     }
@@ -1506,6 +1507,7 @@ class Engine {
     networkId: string | undefined,
     searchTerm: string,
   ): Promise<Array<Token>> {
+
     if (searchTerm.length === 0) {
       return [];
     }

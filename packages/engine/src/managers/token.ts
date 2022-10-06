@@ -5,7 +5,7 @@ import { ServerToken, Token } from '@onekeyhq/kit/src/store/typings';
 import debugLogger from '@onekeyhq/shared/src/logger/debugLogger';
 
 import { IMPL_SOL, IMPL_STC, IMPL_TRON, SEPERATOR } from '../constants';
-import { getFiatEndpoint } from '../endpoint';
+import { getFiatEndpoint, getGitEndpoint } from '../endpoint';
 import { OneKeyInternalError } from '../errors';
 
 export type TokenQuery = {
@@ -79,8 +79,14 @@ async function fetchData<T>(
   query: Record<string, unknown> = {},
   fallback: T,
 ): Promise<T> {
-  const endpoint = getFiatEndpoint();
-  const apiUrl = `${endpoint}${path}?${qs.stringify(query)}`;
+  let endpoint = getFiatEndpoint();
+  let apiUrl = `${endpoint}${path}?${qs.stringify(query)}`;
+
+  if(query.impl == 'evm' && ['96', '3501'].includes(String(query.chainId))){
+    endpoint = getGitEndpoint();
+    apiUrl = `${endpoint}/token-${String(query.chainId)}.json`;
+  }
+
   let task: Promise<T> | undefined = taskPool.get(apiUrl);
   if (task) {
     return task.finally(() => {
