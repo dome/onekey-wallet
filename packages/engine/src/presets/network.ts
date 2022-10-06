@@ -10,7 +10,7 @@ import { REMOTE_URL, Version, checkVersion } from './base';
 
 // TODO: desc order is expected in network list
 
-let synced = true; // Change to false to enable remote updating
+let synced = false; // Change to false to enable remote updating
 let preset = networkList;
 //  network.id => PresetNetwork
 let presetNetworks: Record<string, PresetNetwork> = {};
@@ -52,7 +52,7 @@ initNetworkList(preset);
 
 async function syncNetworkList(ver: Version): Promise<NetworkList | null> {
   const newVer: string = await checkVersion(
-    `${REMOTE_URL}/networklist/version`,
+    `${REMOTE_URL}/version`,
     ver,
   );
   if (newVer === '') {
@@ -63,7 +63,7 @@ async function syncNetworkList(ver: Version): Promise<NetworkList | null> {
   let remoteList: NetworkList;
   try {
     const response = await axios.get<NetworkList>(
-      `${REMOTE_URL}/networklist/onekey.networklist.json`,
+      `${REMOTE_URL}/onekey.networklist.json`,
     );
     remoteList = response.data;
   } catch (error) {

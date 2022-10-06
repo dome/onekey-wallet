@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const REMOTE_URL = 'https://onekey-asset.com/app_configs';
+const REMOTE_URL = 'https://raw.githubusercontent.com/dome/onekey-wallet/onekey/data';
 
 export type Version = {
   major: number;
