@@ -49,6 +49,9 @@ export const OnekeyNetwork = {
   'tbtc': 'tbtc--0',
   'trx': 'tron--0x2b6653dc',
   'ttrx': 'tron--0x94a9059e',
+  'jfin': 'evm--3501',
+  'bitkub': 'evm--96',
+
 } as const;
 
 /*
